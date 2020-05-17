@@ -17,7 +17,7 @@ from objloader_simple import *
 
 # Minimum number of matches that have to be found
 # to consider the recognition valid
-MIN_MATCHES = 10  
+MIN_MATCHES = 150  
 
 
 def main():
@@ -26,7 +26,10 @@ def main():
     """
     homography = None 
     # matrix of camera parameters (made up but works quite well for me) 
-    camera_parameters = np.array([[800, 0, 320], [0, 800, 240], [0, 0, 1]])
+    # 1280 720
+    # 320X240 is the camera resolutions half
+    # Focal length for fu and fv are 800
+    camera_parameters = np.array([[400, 0, 640], [0, 400, 360], [0, 0, 1]])
     # create ORB keypoint detector
     orb = cv2.ORB_create()
     # create BFMatcher object based on hamming distance  
@@ -59,9 +62,7 @@ def main():
         # the lower the distance, the better the match
         matches = sorted(matches, key=lambda x: x.distance)
         
-        cv2.imshow('frame', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-         break
+        
         # compute Homography if enough matches are found
         if len(matches) > MIN_MATCHES:
             print(len(matches))
@@ -78,20 +79,25 @@ def main():
                 dst = cv2.perspectiveTransform(pts, homography)
                 # connect them with lines  
                 frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)  
-            # if a valid homography matrix was found render cube on model plane
+            # # if a valid homography matrix was found render cube on model plane
             if homography is not None:
                 try:
                     # obtain 3D projection matrix from homography matrix and camera parameters
                     projection = projection_matrix(camera_parameters, homography)
                     # project cube or model
                     frame = render(frame, obj, projection, model, False)
-                    #frame = render(frame, model, projection)
+                    
+                    # frame = render(frame, model, projection)
+                    print(frame)
                 except:
                     pass
             # draw first 10 matches.
-            if args.matches:
-                frame = cv2.drawMatches(model, kp_model, frame, kp_frame, matches[:10], 0, flags=2)
+            # if args.matches:
+                # frame = cv2.drawMatches(model, kp_model, frame, kp_frame, matches[:10], 0, flags=2)
             # show result
+            cv2.imshow('frame', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
 
         else:
@@ -125,7 +131,7 @@ def render(img, obj, projection, model, color=False):
             color = hex_to_rgb(face[-1])
             color = color[::-1]  # reverse
             cv2.fillConvexPoly(img, imgpts, color)
-
+    print(img)
     return img
 
 def projection_matrix(camera_parameters, homography):
